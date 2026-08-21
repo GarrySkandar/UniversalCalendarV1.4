@@ -1,0 +1,2 @@
+sxtwl==2.0.7
+pythaidate==0.2.0

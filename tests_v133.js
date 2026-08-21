@@ -1,0 +1,61 @@
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const root=__dirname;
+function ok(c,m){if(!c){console.error('FAIL:',m);process.exit(1)}console.log('OK:',m)}
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
+const selector=fs.readFileSync(path.join(root,'ui/civilization-calendar-selector.js'),'utf8');
+const today=fs.readFileSync(path.join(root,'ui/pages/today-human-page.js'),'utf8');
+const formatters=fs.readFileSync(path.join(root,'ui/formatters.js'),'utf8');
+const server=fs.readFileSync(path.join(root,'server.py'),'utf8');
+const almanacPlugin=fs.readFileSync(path.join(root,'plugins/almanacs/chinese-almanac/plugin.js'),'utf8');
+const layout=fs.readFileSync(path.join(root,'ui/today-layout.js'),'utf8');
+const timeCode=fs.readFileSync(path.join(root,'ui/traditional-time.js'),'utf8');
+const contract=fs.readFileSync(path.join(root,'core/plugin-contract.js'),'utf8');
+
+const nav=[...html.matchAll(/class="nav-item[^\"]*" data-view="([^"]+)"/g)].map(x=>x[1]);
+ok(JSON.stringify(nav)===JSON.stringify(['today','astronomy','lunar-calendar','mars-calendar','earth','converter','about','site-about','donation']),'v1.4.0 left navigation includes Moon and Mars before Location');
+ok(html.includes('class="calendar-view-tab active" data-target-view="capabilities"')&&!html.includes('class="nav-item" data-view="capabilities"'),'World Calendars moved from left navigation into Calendar tabs');
+ok(!html.includes('id="displayMode"'),'simple/civilization/professional mode selector is removed');
+ok(html.includes('id="todayCurrentTime"'),'main Gregorian date hero includes current local time');
+ok(html.includes('id="selectAllCalendars"')&&html.includes('id="clearAllCalendars"'),'civilization calendar panel exposes select-all and clear-all actions');
+ok(html.indexOf('id="todayEras"')<html.indexOf('id="todayCivilizations"'),'Era layer follows the Gregorian hero and astronomy modules');
+ok(html.includes('class="date-system-layout today-layout-item"')&&html.includes('class="date-system-side-stack today-layout-item"'),'Chinese Almanac occupies the left date-system column and Huangji/Sanyuan share the right stack');
+ok(html.indexOf('id="selectedCivilizations"')<html.indexOf('id="selectedEras"'),'selected-date inspector uses the same order');
+ok(html.includes('id="selectedClockTime"'),'month selected-date inspector has an explicit time input for traditional time calculation');
+ok(app.includes("$('#traditionPanel').hidden=!(id==='today'||id==='calendar')"),'Civilization Calendars panel only appears on Today/Month Calendar');
+ok(html.includes('id="capabilities"')&&html.includes('世界历法 · 能力与数据'),'World Calendars uses the capability/data matrix page');
+ok(html.includes('data-view="about"')&&html.includes('引擎架构'),'Engine Architecture remains a first-class page');
+ok(html.includes('ui/traditional-time.js?v=1.4.0')&&html.includes('ui/civilization-calendar-selector.js?v=1.4.0'),'traditional-time and detailed civilization-selector modules are loaded');
+ok(html.includes('ui/today-layout.js?v=1.4.0')&&html.includes('id="todayLayoutGrid"')&&html.includes('id="resetTodayLayout"'),'Today layout controls are loaded');
+ok(layout.includes('ucc.todayLayout.v1.3.3')&&layout.includes('dragstart')&&layout.includes('pointerdown')&&layout.includes('reset'),'Today layout supports local drag, resize, and reset');
+ok(html.includes('presentation/i18n/locales/v133-ui.js?v=1.4.0'),'v1.3.3 compatibility locale is loaded by the v1.4.0 shell');
+
+for(const id of ['julian','revised-julian','armenian','coptic','ethiopian']) ok(selector.includes(`id:'${id}'`),`two-level Christian branch retained: ${id}`);
+for(const id of ['gregorian','christian_western','catholic','protestant','lds','orthodox_new','orthodox_old']) ok(!selector.includes(`id:'${id}'`),`redundant Christian child removed: ${id}`);
+ok(selector.includes("label:'基督教相关（格里高利历，国际公历）'")&&selector.includes("label:'儒略历（东正教旧历）'")&&selector.includes("label:'修订儒略历（东正教新历）'"),'Christian branch uses the requested two-level labels');
+ok(!/id:'(?:julian|revised-julian)'[^\n]*children:/.test(selector)&&!selector.includes("label:'天主教礼仪传统'")&&!selector.includes("label:'后期圣徒教会传统'"),'Christian branch has exactly two levels with no repeated denomination layer');
+ok(selector.includes("kind:'calendar'")&&selector.includes('isDescendantOf')&&app.includes("legacyChristian=['gregorian'"),'Named calendars remain selectable and old selections migrate');
+ok(!selector.includes("const defaultChildren=new Set([\n    'gregorian'")&&today.includes("const effective=['gregorian',...xs]")&&today.includes("id==='revised-julian'"),'Christian parent supplies the Gregorian baseline and optional second-level calendars render on Today');
+for(const id of ['jewish_israel','jewish_diaspora']) ok(selector.includes(`id:'${id}'`),`Jewish observance variant retained: ${id}`);
+ok(!selector.includes("id:'roc-era'")&&selector.includes("id:'japanese-era'"),'ROC is merged into Chinese historical chronology while Japanese era remains selectable');
+ok(today.includes("['中华历史纪年'")&&!today.includes('民国纪年是中国历史纪年的现代延续')&&today.indexOf("['中华历史纪年'")<today.indexOf("['日本年号'"),'Chinese historical chronology is named 中华历史纪年 and precedes Japanese era');
+ok(today.includes('forceHistorical')&&app.includes("forceHistorical:prefix==='selected'")&&app.includes('setSelectedJdn(C.gregorianToJdn(y,m,Math.min(selected.day,dim)))'),'Month selected date always shows chronology and follows the displayed month');
+ok(formatters.includes('ch.ganzhi?.year_lichun')&&formatters.includes('format.taoShort'),'Daoist calendar uses sexagenary year names');
+ok(server.includes('"time_periods": chinese_time_periods')&&server.includes('getTimeTianShenLuck')&&server.includes('getTimeYi')&&server.includes('getTimeJi'),'Chinese almanac provider exposes twelve double-hour luck data');
+ok(today.includes('a.time_periods')&&today.includes('十二时辰吉凶')&&almanacPlugin.includes('time_periods'),'Chinese Almanac renders the twelve double-hour table');
+ok(today.includes('TT?.chinese')&&today.includes('TT?.indianSix'),'Different Civilizations Today includes Chinese and Indian traditional time renderers');
+ok(today.includes('sanyuan-current-state')&&today.includes('Cycle progress')&&today.includes('Trigram / element'),'Sanyuan Jiuyun exposes complete current-state and cycle details');
+ok(contract.includes("'hierarchical-cycle'"),'Plugin Contract accepts the Sanyuan hierarchical-cycle representation');
+ok(app.includes('setAllCalendarSelections(true)')&&app.includes('setAllCalendarSelections(false)'),'bulk calendar actions update the shared selection state');
+
+const sandbox={window:{}};vm.createContext(sandbox);vm.runInContext(timeCode,sandbox);const TT=sandbox.window.TraditionalTime;
+let t=TT.chinese({hour:23,minute:0,second:0},false);ok(t.branch==='子'&&t.ke==='初初刻','23:00 maps to 子时 · 初初刻 in 96-ke RuleSet');
+t=TT.chinese({hour:0,minute:30,second:0},false);ok(t.branch==='子'&&t.ke==='正二刻','00:30 remains 子时 and advances to 正二刻');
+let i=TT.indianSix({hour:6,minute:0,second:0},false);ok(i.periodName==='晨朝'&&i.muhurta===1&&i.lava===1,'06:00 maps to first daytime period, first muhūrta/lava');
+i=TT.indianSix({hour:10,minute:0,second:0},false);ok(i.periodName==='日中','10:00 maps to second daytime period');
+i=TT.indianSix({hour:22,minute:0,second:0},false);ok(i.periodName==='中夜','22:00 maps to middle-night period');
+
+ok(html.includes('id="site-about"')&&html.includes('id="donation"'),'About Us and Donation content pages remain available');
+ok(fs.existsSync(path.join(root,'content/about/zh-CN.md'))&&fs.existsSync(path.join(root,'content/donation/zh-CN.md'))&&fs.existsSync(path.join(root,'config/donation.json')),'Markdown About/Donation content and donation config exist');
+ok(html.includes('v1.4.0'),'v1.4.0 assets are loaded');
+console.log('V1.3.3 restored-function compatibility tests passed under v1.4.0.');

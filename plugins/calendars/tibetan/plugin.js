@@ -1,0 +1,4 @@
+window.PluginBootstrap.define({
+  manifest:{id:'tibetan',type:'calendar',name:'藏历—喜马拉雅体系',en:'Tibetan Calendar',civilization:'藏地/喜马拉雅',status:'versioned',version:'1.0.0',representation:'year-month-day',dependsOn:['temporal-core'],coverage:'Phugpa / Tsurphu / Mongol；可选 caltib provider',ruleSet:{id:'tibetan-versioned',name:'Versioned Tibetan Engines'},ui:{selectable:false,renderer:'generic-key-value'}},
+  engine:{async compute(input,ctx){const C=ctx.core.calendar;const g=input.g||C.jdnToGregorian(input.jdn??input.selectedJdn);const engine=input.ruleSet||input.engine||'phugpa';const x=await ctx.services.api.tibetanDay(g,engine);if(!x)throw new Error('Tibetan provider unavailable');return {type:'year-month-day',calendar:'tibetan',ruleSet:x.rule_set,engine:x.engine,gregorian:x.gregorian,jdn:x.jdn,...x.tibetan,text:x.text};}}
+});

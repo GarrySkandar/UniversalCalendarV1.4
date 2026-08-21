@@ -1,0 +1,4 @@
+window.PluginBootstrap.define({
+  manifest:{id:'sanyuan-jiuyun',type:'cosmology',name:'三元九运',en:'Three Cycles and Nine Periods',civilization:'中华文明',status:'versioned',version:'1.3.0',representation:'hierarchical-cycle',dependsOn:['temporal-core'],coverage:'1864纪元常用玄空 RuleSet：180年一周期、每元60年、每运20年',ruleSet:{id:'sanyuan-jiuyun-1864',name:'三元九运 · 1864纪元常用玄空规则'},description:'玄空/风水相关时间周期。与《皇极经世》元会运世并列，不视为邵雍原典同一算法。',ui:{selectable:false,group:'interpretation',renderer:'sanyuan-jiuyun'}},
+  engine:{compute(input,ctx){const C=ctx.core.calendar;const g=input.g||C.jdnToGregorian(input.jdn??input.selectedJdn);if(!window.AdvancedTimeSystems?.sanyuanJiuyunForYear)throw new Error('Sanyuan Jiuyun provider unavailable');return {type:'hierarchical-cycle',...window.AdvancedTimeSystems.sanyuanJiuyunForYear(g.year)};}}
+});

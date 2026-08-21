@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#0b2237" />
+  <title>通用文明历法引擎 Universal Civilization Calendar v1.4.0</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css?v=1.4.0-time-1" />
+  <link rel="stylesheet" href="astronomy-realtime.css?v=1.4.0" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="side-nav" aria-label="主导航">
+      <div class="brand">
+        <div class="brand-orbit"><span>U</span></div>
+        <div><div class="brand-title" data-i18n="app.name">文明时间引擎</div><div class="brand-sub" data-i18n="app.version">Universal Calendar · v1.4.0</div></div>
+      </div>
+      <nav class="nav-list human-nav">
+        <button class="nav-item active" data-view="today" type="button"><span data-i18n="nav.human.calendar">日历</span><small>Calendar</small></button>
+        <button class="nav-item" data-view="astronomy" type="button"><span data-i18n="nav.human.astronomy">天文</span><small>Astronomy</small></button>
+        <button class="nav-item" data-view="lunar-calendar" type="button"><span data-i18n="nav.human.lunarCalendar">月球历</span><small>Lunar Calendar</small></button>
+        <button class="nav-item" data-view="mars-calendar" type="button"><span data-i18n="nav.human.marsCalendar">火星历</span><small>Mars Calendar</small></button>
+        <button class="nav-item" data-view="earth" type="button"><span data-i18n="nav.human.location">地点</span><small>Location</small></button>
+        <button class="nav-item" data-view="converter" type="button"><span data-i18n="nav.human.converter">历法转换</span><small>Convert</small></button>
+        <button class="nav-item" data-view="about" type="button"><span data-i18n="human.architectureEntry">引擎架构</span><small>Architecture</small></button>
+        <div class="nav-divider" aria-hidden="true"></div>
+        <button class="nav-item" data-view="site-about" type="button"><span data-i18n="nav.human.aboutUs">关于我们</span><small>About Us</small></button>
+        <button class="nav-item" data-view="donation" type="button"><span data-i18n="nav.human.donation">捐赠</span><small>Donate</small></button>
+      </nav>
+      <div class="side-foot">
+        <div class="planet-chip"><span class="planet-dot"></span><div><b data-i18n="human.earthSystem">地球时间系统</b><small data-i18n="human.locationAware">地点相关 · 可扩展行星</small></div></div>
+        <div id="engineBadge" class="engine-badge warn" data-i18n="status.checking">引擎检查中…</div>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="workspace-head">
+        <div><div class="eyebrow" id="viewEyebrow">OVERVIEW · v1.4.0</div><h1 id="viewTitle">今日日历</h1><p id="viewSubtitle">同一个时空点，在天文、历法、纪年、宗教与国家层中的不同表达。</p></div>
+        <div class="head-actions">
+          <label class="language-control"><span data-i18n="label.language">界面语言</span><select id="uiLanguage" aria-label="Interface language"><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="es">Español</option><option value="fr">Français</option></select></label>
+          <button id="jumpEarth" class="ghost-btn" type="button" data-i18n="action.chooseLocation">选择地点</button><div class="global-date" id="globalDate"></div>
+        </div>
+      </header>
+
+      <section class="context-bar" aria-label="当前时空点">
+        <div class="context-main"><span class="context-pin">●</span><div><strong id="contextLocation">北京 · 中国</strong><small id="contextCoords">39.9042° N · 116.4074° E</small></div></div>
+        <div class="context-stat"><span>当地时间</span><strong id="contextTime">--:--:--</strong></div>
+        <div class="context-stat"><span>民用时区</span><strong id="contextZone">Asia/Shanghai</strong></div>
+        <div class="context-stat"><span>当地平均太阳时</span><strong id="contextSolarTime">--:--</strong></div>
+      </section>
+
+      <aside id="traditionPanel" class="surface tradition-panel civilization-calendar-panel" aria-label="各文明历法">
+        <div class="section-title civilization-calendar-title">
+          <div><span data-i18n="human.civilizationCalendars">各文明历法</span><small data-i18n="human.civilizationCalendarsHint">选择后联动纪年、历日与传统模块</small></div>
+          <div class="civilization-calendar-actions" role="group" aria-label="历法选择操作">
+            <button id="selectAllCalendars" type="button" class="selection-action" data-i18n="human.selectAllCalendars">全选</button>
+            <button id="clearAllCalendars" type="button" class="selection-action" data-i18n="human.clearAllCalendars">全取消</button>
+          </div>
+        </div>
+        <div id="civilizationCalendarFilters" class="civilization-calendar-filters"></div>
+        <div class="sidebar-location">
+          <div class="sidebar-subtitle" data-i18n="human.sidebarLocation">地点</div>
+          <strong id="sidebarLocationName">北京 · UTC+8</strong>
+          <button type="button" class="sidebar-link" data-target-view="earth" data-i18n="action.changeLocation">更改地点</button>
+        </div>
+      </aside>
+
+      <section id="today" class="view active">
+        <div class="calendar-view-switch" role="group" aria-label="Calendar view">
+          <button class="calendar-view-tab active" data-target-view="today" type="button" data-i18n="human.today">今天</button>
+          <button class="calendar-view-tab" data-target-view="calendar" type="button" data-i18n="human.monthCalendar">月历</button>
+          <button class="calendar-view-tab" data-target-view="capabilities" type="button" data-i18n="nav.human.worldCalendars">世界历法</button>
+        </div>
+        <div id="todayLayoutToolbar" class="today-layout-toolbar" data-layout-container="toolbar">
+          <div><b data-i18n="human.todayLayout">今日布局</b><small data-i18n="human.todayLayoutHint">拖动调整顺序，拖拽右下角调整大小</small></div>
+          <button id="resetTodayLayout" type="button" data-i18n="human.resetTodayLayout">恢复默认布局</button>
+        </div>
+        <div id="todayLayoutGrid" class="today-layout-grid" data-layout-container="top">
+          <div class="today-grid today-layout-item" data-layout-id="today-overview" data-layout-container="overview">
+          <section class="today-hero gregorian-only-hero today-layout-item" data-layout-id="today-gregorian">
+            <div class="hero-kicker" id="todayLocationLabel">BEIJING · EARTH</div>
+            <div id="todayWeekday" class="today-weekday"></div>
+            <div class="today-date-line"><span id="todayMonthDay"></span><small id="todayYear"></small></div><div id="todayCurrentTime" class="today-current-time">--:--:--</div><div class="today-true-solar-time"><span id="todayTrueSolarLabel">真太阳时</span><time id="todayTrueSolarTime">----</time></div>
+          </section>
+          <section class="surface today-sky-card today-layout-item" data-layout-id="today-astronomy">
+            <div class="section-title"><span data-i18n="human.todayAstronomy">今日天文</span><small data-i18n="human.locationRelated">地点相关</small></div>
+            <div class="sky-mini-grid">
+              <div><span>日出</span><strong id="todaySunrise">—</strong></div>
+              <div><span>日落</span><strong id="todaySunset">—</strong></div>
+              <div><span>月相</span><strong id="todayMoon">—</strong></div>
+              <div><span>昼长</span><strong id="todayDayLength">—</strong></div>
+            </div>
+          </section>
+          </div>
+          <section class="surface today-era-panel today-layout-item" data-layout-id="today-era">
+          <div class="section-title"><span data-i18n="human.eraLayer">纪年</span><small>中华历史纪年 · 日本年号 · 其他文明纪年</small></div>
+          <div id="todayEras" class="era-chip-grid"></div>
+          </section>
+          <section class="surface today-civilizations-panel today-layout-item" data-layout-id="today-civilizations">
+          <div class="section-title"><span data-i18n="human.todayAcrossCivilizations">不同文明的今天</span><small>历法日期 + 传统记时；仅显示右侧已添加的文明体系</small></div>
+          <div id="todayCivilizations" class="human-card-grid"></div>
+          </section>
+          <section class="surface today-observance-panel today-layout-item" data-layout-id="today-observances">
+          <div class="section-title"><span data-i18n="human.civilizationObservances">文明纪念</span><small>不受右侧历法选择影响；标注宗教 / 国家 / 文明等类别</small></div>
+          <div id="todayObservances" class="observance-list"></div>
+          </section>
+          <div class="date-system-layout today-layout-item" data-layout-id="today-date-systems" data-layout-container="date-systems">
+          <section id="todayChineseAlmanacSection" class="surface date-system-module today-layout-item" data-layout-id="today-almanac">
+            <div class="section-title"><span data-i18n="human.chineseAlmanac">中国传统黄历</span><small>Chinese Almanac</small></div><div id="todayChineseAlmanac" class="date-system-content"></div>
+          </section>
+          <div class="date-system-side-stack today-layout-item" data-layout-id="today-side-stack" data-layout-container="side-stack">
+            <section id="todayHuangjiSection" class="surface date-system-module today-layout-item" data-layout-id="today-huangji">
+              <div class="section-title"><span data-i18n="human.huangji">皇极经世</span><small>元 · 会 · 运 · 世</small></div><div id="todayHuangji" class="date-system-content"></div>
+            </section>
+            <section id="todaySanyuanSection" class="surface date-system-module today-layout-item" data-layout-id="today-sanyuan">
+              <div class="section-title"><span data-i18n="human.sanyuan">三元九运</span><small>Sanyuan Jiuyun</small></div><div id="todaySanyuan" class="date-system-content"></div>
+            </section>
+          </div>
+          <section id="todayPanchangaSection" class="surface date-system-module today-layout-item" data-layout-id="today-panchanga">
+          <div class="section-title"><span>Indian Panchanga</span><small>Vara · Tithi · Nakshatra · Yoga · Karana</small></div><div id="todayPanchanga" class="date-system-content"></div>
+          </section>
+          </div>
+        </div>
+      </section>
+
+      <section id="earth" class="view">
+        <div class="earth-layout">
+          <section class="surface map-surface">
+            <div class="section-title"><span>地球时空选点</span><small>输入中英文地点 → 候选定位 → 地图跳转 → 点击或拖动标记微调。</small></div>
+            <div class="place-search-main">
+              <label for="globalPlaceSearch">搜索地点</label>
+              <div class="place-search-row"><input id="globalPlaceSearch" type="search" placeholder="长沙 / Changsha / 大阪 / Osaka / New York…" autocomplete="off"/><button id="globalPlaceSearchBtn" class="primary" type="button">搜索</button></div>
+              <div id="globalPlaceSearchStatus" class="map-search-status">支持中文/英文；候选定位后地图跳转，可点击或拖动标记微调。在线地理编码不可用时回退内置城市。</div>
+              <div id="globalPlaceResults" class="global-place-results"></div>
+            </div>
+            <div class="map-wrap real-map-wrap">
+              <div id="earthLeafletMap" class="earth-leaflet-map" aria-label="世界地图选点"></div>
+              <canvas id="earthMapCanvas" class="earth-map-fallback" aria-label="离线世界地图选点"></canvas>
+              <div class="map-legend">真实地图：OpenStreetMap · 点击地图或拖动标记选点；瓦片不可用时自动保留离线示意地图。</div>
+            </div>
+            <div class="map-toolbar">
+              <label>纬度<input id="locationLat" type="number" step="0.0001" min="-90" max="90" /></label>
+              <label>经度<input id="locationLon" type="number" step="0.0001" min="-180" max="180" /></label>
+              <button id="resolveLocationBtn" class="primary" type="button">应用坐标</button>
+              <button id="useBrowserLocation" type="button">浏览器定位</button>
+            </div>
+          </section>
+          <aside class="earth-side">
+            <section class="surface location-search-card">
+              <div class="section-title"><span>常用城市 / 地区</span><small>离线 Profile 快捷入口</small></div>
+              <input id="locationSearch" class="search-input" type="search" placeholder="筛选内置城市 Profile…" />
+              <div id="locationResults" class="location-results"></div>
+            </section>
+            <section class="surface location-detail-card">
+              <div class="section-title"><span>当前地点 Profile</span><small id="locationResolveSource">—</small></div>
+              <div id="locationDetail" class="location-detail"></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section id="lunar-calendar" class="view planetary-calendar-view">
+        <section class="surface planetary-hero lunar-hero"><div><div class="eyebrow">LUNAR CALENDAR · RULES v0.3</div><h2>月球历</h2><p>中国文化版月球纪元与月球自然环境分层计算；中华农历只负责文化命名，不驱动月面科学量。</p></div><div class="planetary-badge">MOON<br><small>experimental</small></div></section>
+        <section class="surface planetary-earth-reference" aria-label="月球历的地球参考地点">
+          <div class="planetary-reference-intro"><span>地球参考地点</span><strong id="lunarEarthReference">—</strong><small>跟随“地点”页面的地图选点，只用于显示地球当地时间。</small></div>
+          <div class="planetary-reference-clock"><span>所选地点当地时间</span><strong id="lunarEarthLocalTime">—</strong><small>与下方 UTC 参考时刻表示同一瞬间。</small></div>
+          <button type="button" data-target-view="earth">在地图中更改</button>
+        </section>
+        <section class="surface planetary-time-source" aria-label="月球历全局时间来源">
+          <div class="planetary-time-source-copy"><span>全局时间来源</span><strong data-reference-time-mode-label>实时</strong><small data-reference-time-detail>跟随系统当前时间，每秒校时。</small></div>
+          <div class="planetary-time-source-actions" role="group" aria-label="选择月球历时间来源"><button type="button" data-reference-time-mode="live">实时</button><button type="button" data-reference-time-mode="calendar">日历选定</button><button type="button" data-reference-time-mode="custom">自定义 UTC</button><button type="button" class="primary" data-reference-time-action="now">回到现在</button></div>
+        </section>
+        <section class="surface planetary-controls lunar-controls">
+          <label><span>参考时刻（UTC）</span><input id="lunarInstant" type="datetime-local" step="1" /><small>由全局时间来源控制；选择“自定义 UTC”后可以编辑。</small></label>
+          <label><span>月面纬度（北+）</span><input id="lunarLat" type="number" min="-90" max="90" step="0.00001" value="0.67409" /><small>IAU_MOON 月面坐标，与地球地图坐标独立。</small></label>
+          <label><span>月面经度（东+）</span><input id="lunarLon" type="number" min="-180" max="180" step="0.00001" value="23.47298" /><small>决定所选月面地点的太阳高度与昼夜。</small></label>
+          <label><span>月球基地民用时间偏移</span><input id="lunarOffset" type="number" min="-24" max="24" step="0.5" value="8" /><small>基地自定义的 UTC 小时偏移，不跟随地球地图。</small></label>
+          <button id="calculateLunar" class="primary" type="button">计算月球历</button>
+        </section>
+        <section class="surface planetary-surface-picker moon-surface-picker" aria-labelledby="lunarSurfaceTitle">
+          <div class="surface-picker-head">
+            <div><span class="eyebrow">INTERACTIVE SURFACE · IAU_MOON</span><h3 id="lunarSurfaceTitle">月球表面选点</h3><p>拖拽旋转圆球，点击月面即可回填经纬度并重新计算。明暗分区随当前 UTC 时刻更新。</p></div>
+            <div class="surface-picker-actions" role="group" aria-label="月球视角控制"><button type="button" data-surface-action="lunar-near">对地面</button><button type="button" data-surface-action="lunar-selection">定位选点</button><button type="button" data-surface-action="lunar-far">背地面</button></div>
+          </div>
+          <div class="surface-picker-layout">
+            <div class="planetary-globe-stage moon-globe-stage">
+              <canvas id="lunarSurfaceGlobe" tabindex="0" role="img" aria-describedby="lunarSurfaceHint"></canvas>
+              <div class="surface-globe-legend" aria-label="月球表面图例"><span><i class="legend-selection"></i>选点</span><span><i class="legend-sunpoint"></i>太阳直射</span><span><i class="legend-earthside"></i>对地面中心</span><span><i class="legend-terminator"></i>晨昏线</span></div>
+              <p id="lunarSurfaceHint" class="surface-interaction-hint">拖拽旋转 · 点击选点 · 方向键旋转 · Enter 选择视图中心</p>
+            </div>
+            <aside class="surface-pick-detail" aria-live="polite">
+              <div><span>当前月面选点</span><strong id="lunarSurfaceCoordinates">—</strong></div>
+              <div><span>与地球朝向</span><strong id="lunarSurfaceEarthSide">—</strong><small>月面经度 0°、纬度 0° 为对地面中心参考。</small></div>
+              <div><span>当前昼夜</span><strong id="lunarSurfaceLight">—</strong><small>由太阳直射点计算的球形月面几何昼夜。</small></div>
+              <p class="surface-data-note">表面明暗与地形纹理用于选点和方向理解；当前历法引擎仍不含 DEM 地形遮挡。</p>
+            </aside>
+          </div>
+        </section>
+        <div id="lunarCalendarStatus" class="planetary-status"></div>
+        <div id="lunarCalendarResult" class="planetary-result-grid"></div>
+      </section>
+
+      <section id="mars-calendar" class="view planetary-calendar-view">
+        <section class="surface planetary-hero mars-hero"><div><div class="eyebrow">MARS CALENDAR · v0.4</div><h2>火星历</h2><p>以 MSD/AMT 为全球时间轴，以 LMST 表示当地民用日期；年首由 Ls=0° 所在 AMT sol 决定。</p></div><div class="planetary-badge">MARS<br><small>versioned</small></div></section>
+        <section class="surface planetary-earth-reference" aria-label="火星历的地球参考地点">
+          <div class="planetary-reference-intro"><span>地球参考地点</span><strong id="marsEarthReference">—</strong><small>跟随“地点”页面的地图选点，只用于显示地球当地时间。</small></div>
+          <div class="planetary-reference-clock"><span>所选地点当地时间</span><strong id="marsEarthLocalTime">—</strong><small>与下方 UTC 参考时刻表示同一瞬间。</small></div>
+          <button type="button" data-target-view="earth">在地图中更改</button>
+        </section>
+        <section class="surface planetary-time-source" aria-label="火星历全局时间来源">
+          <div class="planetary-time-source-copy"><span>全局时间来源</span><strong data-reference-time-mode-label>实时</strong><small data-reference-time-detail>跟随系统当前时间，每秒校时。</small></div>
+          <div class="planetary-time-source-actions" role="group" aria-label="选择火星历时间来源"><button type="button" data-reference-time-mode="live">实时</button><button type="button" data-reference-time-mode="calendar">日历选定</button><button type="button" data-reference-time-mode="custom">自定义 UTC</button><button type="button" class="primary" data-reference-time-action="now">回到现在</button></div>
+        </section>
+        <section class="surface planetary-controls mars-controls">
+          <label><span>参考时刻（UTC）</span><input id="marsInstant" type="datetime-local" step="1" /><small>由全局时间来源控制；选择“自定义 UTC”后可以编辑。</small></label>
+          <label><span>火星纬度（北+）</span><input id="marsLat" type="number" min="-90" max="90" step="0.00001" value="0" /><small>用于表面选点和昼夜判定；当前历法日期只依赖经度。</small></label>
+          <label><span>火星经度（东+）</span><input id="marsLon" type="number" min="-180" max="180" step="0.00001" value="0" /><small>IAU_MARS 火星坐标；决定 LMST 与火星当地日期。</small></label>
+          <button id="calculateMars" class="primary" type="button">计算火星历</button>
+        </section>
+        <section class="surface planetary-surface-picker mars-surface-picker" aria-labelledby="marsSurfaceTitle">
+          <div class="surface-picker-head">
+            <div><span class="eyebrow">INTERACTIVE SURFACE · IAU_MARS</span><h3 id="marsSurfaceTitle">火星表面选点</h3><p>拖拽查看不同半球，点击表面回填坐标并重新计算；昼夜区域由 AMT 与太阳经度 Ls 推算。</p></div>
+            <div class="surface-picker-actions" role="group" aria-label="火星视角控制"><button type="button" data-surface-action="mars-prime">本初子午线</button><button type="button" data-surface-action="mars-selection">定位选点</button></div>
+          </div>
+          <div class="surface-picker-layout">
+            <div class="planetary-globe-stage mars-globe-stage">
+              <canvas id="marsSurfaceGlobe" tabindex="0" role="img" aria-describedby="marsSurfaceHint"></canvas>
+              <div class="surface-globe-legend" aria-label="火星表面图例"><span><i class="legend-selection"></i>选点</span><span><i class="legend-sunpoint"></i>太阳直射</span><span><i class="legend-terminator"></i>晨昏线</span></div>
+              <p id="marsSurfaceHint" class="surface-interaction-hint">拖拽旋转 · 点击选点 · 方向键旋转 · Enter 选择视图中心</p>
+            </div>
+            <aside class="surface-pick-detail" aria-live="polite">
+              <div><span>当前火星选点</span><strong id="marsSurfaceCoordinates">—</strong></div>
+              <div><span>当前昼夜</span><strong id="marsSurfaceLight">—</strong><small>纬度用于可视化判断，经度同时驱动 LMST。</small></div>
+              <div><span>太阳直射点</span><strong id="marsSurfaceSubsolar">—</strong><small>依据当前 AMT 与 Ls 的近似几何位置。</small></div>
+              <p class="surface-data-note">离线程序化地形仅用于辨识表面与选点，不代表高程 DEM，也不进入历法数值计算。</p>
+            </aside>
+          </div>
+        </section>
+        <div id="marsCalendarStatus" class="planetary-status"></div>
+        <div id="marsCalendarResult" class="planetary-result-grid"></div>
+      </section>
+
+      <section id="astronomy" class="view">
+        <div class="astro-hero surface">
+          <div><div class="eyebrow">ASTRONOMY LAYER</div><h2 id="astroTitle">地球天文层</h2><p>这一层不属于任何文明；各历法只是引用这些共同的太阳、月亮与地点信息。</p></div>
+          <div class="astro-location" id="astroLocation">—</div>
+        </div>
+        <div class="astro-grid">
+          <section class="surface astro-card"><div class="astro-icon sun-icon"></div><span>太阳</span><strong id="astroSunMain">—</strong><div id="astroSunDetail" class="astro-detail"></div></section>
+          <section class="surface astro-card"><div class="astro-icon moon-icon"></div><span>月亮</span><strong id="astroMoonMain">—</strong><div id="astroMoonDetail" class="astro-detail"></div></section>
+          <section class="surface astro-card"><div class="astro-icon earth-icon"></div><span>当地时间系统</span><strong id="astroTimeMain">—</strong><div id="astroTimeDetail" class="astro-detail"></div></section>
+          <section class="surface astro-card"><div class="astro-icon season-icon"></div><span>季节解释</span><strong id="astroSeasonMain">—</strong><div id="astroSeasonDetail" class="astro-detail"></div></section>
+        </div>
+        <div class="realtime-astronomy-grid" aria-label="实时天文模拟">
+          <section class="surface realtime-astronomy-module sundial-module">
+            <header class="realtime-module-head">
+              <div><h3>实时立体日晷</h3><p>3D EQUATORIAL SUNDIAL · 经纬度与时间联动</p></div>
+              <span class="realtime-status"><i></i>实时 · 1 秒</span>
+            </header>
+            <div id="realtimeSundial" class="sundial-stage" role="img" aria-label="随当地太阳位置变化的立体赤道式日晷"></div>
+            <div class="realtime-metrics sundial-metrics">
+              <div><span>太阳高度</span><strong id="sundialAltitude">—</strong></div>
+              <div><span>太阳方位</span><strong id="sundialAzimuth">—</strong></div>
+              <div><span>影长比</span><strong id="sundialShadowRatio">—</strong></div>
+              <div><span>真太阳时</span><strong id="sundialSolarTime">—</strong></div>
+            </div>
+            <p id="sundialNote" class="realtime-note">正在读取当地位置…</p>
+          </section>
+          <section class="surface realtime-astronomy-module orbital-module">
+            <header class="realtime-module-head">
+              <div><h3>太阳系实时运行</h3><p>SUN · EARTH · MOON · MARS · MOONS</p></div>
+              <div class="orbit-head-tools">
+                <span class="realtime-status"><i></i>实时 · 1 秒</span>
+                <div class="orbit-zoom-controls" role="group" aria-label="星系图缩放控制">
+                  <button type="button" data-orbit-action="out" aria-label="缩小星系图">−</button>
+                  <output id="orbitZoomValue" aria-live="polite">100%</output>
+                  <button type="button" data-orbit-action="in" aria-label="放大星系图">＋</button>
+                  <button type="button" class="orbit-reset" data-orbit-action="reset">复位</button>
+                </div>
+              </div>
+            </header>
+            <div id="realtimeOrbits" class="orbits-stage" role="img" tabindex="0" aria-label="可缩放平移的太阳、地球、月球、火星、火卫一和火卫二实时轨道相位"></div>
+            <p class="orbit-interaction-hint">滚轮缩放 · 拖拽平移 · 双击复位</p>
+            <div class="orbit-legend" aria-label="图例"><span><i class="legend-sun"></i>太阳</span><span><i class="legend-earth"></i>地月系统</span><span><i class="legend-mars"></i>火星系统</span></div>
+            <p id="orbitsNote" class="realtime-note">轨道相位按当前时刻近似计算；天体尺寸与轨道距离为示意比例。</p>
+          </section>
+        </div>
+        <section class="surface astronomy-explainer">
+          <div class="section-title"><span>共同天文底座</span><small>历法只是在这些周期上采用不同规则</small></div>
+          <div class="engine-flow compact"><div>地球自转<br><b>Day</b></div><i>+</i><div>地球公转<br><b>Solar Year</b></div><i>+</i><div>月球周期<br><b>Synodic Month</b></div><i>→</i><div class="accent">Calendar RuleSet</div></div>
+        </section>
+      </section>
+
+      <section id="calendar" class="view">
+        <div class="calendar-view-switch" role="group" aria-label="Calendar view">
+          <button class="calendar-view-tab" data-target-view="today" type="button" data-i18n="human.today">今天</button>
+          <button class="calendar-view-tab active" data-target-view="calendar" type="button" data-i18n="human.monthCalendar">月历</button>
+          <button class="calendar-view-tab" data-target-view="capabilities" type="button" data-i18n="nav.human.worldCalendars">世界历法</button>
+        </div>
+        <div class="calendar-toolbar surface">
+          <div class="month-nav">
+            <button id="prevMonth" class="icon-btn" type="button" aria-label="上月">←</button>
+            <div class="ym-controls"><label>年份<input id="calYear" type="number" min="-5000" max="5000" step="1" /></label><label>月份<select id="calMonth"></select></label></div>
+            <button id="goMonth" class="primary" type="button">跳转</button><button id="todayBtn" type="button">当地今天</button><button id="nextMonth" class="icon-btn" type="button" aria-label="下月">→</button>
+          </div>
+          <div class="display-controls"><label>日期格副历<select id="cellSecondary"><option value="chinese">中国农历</option><option value="hanbuddhist">汉传佛历</option><option value="taoist">道教历日</option><option value="thai">南传泰国佛历</option><option value="silicon">硅基生命历</option><option value="islamic">伊斯兰历</option><option value="hebrew">希伯来历</option><option value="julian">儒略历</option><option value="none">不显示</option></select></label><div class="check-cluster"><label><input class="annotationCheck" type="checkbox" value="term" checked /> 节气</label><label><input class="annotationCheck" type="checkbox" value="festival" checked /> 节日</label><label><input class="annotationCheck" type="checkbox" value="era" /> 纪年</label></div></div>
+        </div>
+        <div class="calendar-layout">
+          <div class="calendar-stage"><div id="monthPeriodBanner" class="period-banner" hidden></div><div class="weekhead"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div><div id="monthGrid" class="month-grid"></div></div>
+          <aside class="date-inspector surface selected-date-panel"><div class="inspector-head"><div><div class="eyebrow">SELECTED DATE</div><h2 id="selectedTitle">日期详情</h2><div id="selectedSubtitle" class="muted"></div></div><label class="selected-time-control">时刻<input id="selectedClockTime" type="time" step="1" /></label></div>
+            <div class="selected-date-flow">
+              <section><h3 data-i18n="human.todayAcrossCivilizations">不同文明的今天</h3><div id="selectedCivilizations" class="selected-civilization-list"></div></section>
+              <section><h3 data-i18n="human.eraLayer">纪年</h3><div id="selectedEras" class="era-chip-grid compact"></div></section>
+              <section><h3 data-i18n="human.civilizationObservances">文明纪念</h3><div id="selectedObservances" class="observance-list compact-observances"></div></section>
+              <section id="selectedChineseAlmanacSection"><h3 data-i18n="human.chineseAlmanac">中国传统黄历</h3><div id="selectedChineseAlmanac"></div></section>
+              <section id="selectedHuangjiSection"><h3 data-i18n="human.huangji">皇极经世</h3><div id="selectedHuangji"></div></section>
+              <section id="selectedSanyuanSection"><h3 data-i18n="human.sanyuan">三元九运</h3><div id="selectedSanyuan"></div></section>
+              <section id="selectedPanchangaSection"><h3>Indian Panchanga</h3><div id="selectedPanchanga"></div></section>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="calendars" class="view">
+        <section class="surface calendar-system-intro">
+          <div><div class="eyebrow">CALENDAR RULE ENGINE</div><h2>世界历法 = 共同天文核心 + 不同规则组合</h2><p>第一层按计算原理分类；第二层才看文明、地区和历史版本。特殊历法通过插件表达，不强迫转换成普通 YYYY-MM-DD。</p></div>
+          <div class="family-tabs" id="calendarFamilyFilters"></div>
+        </section>
+        <div id="calendarCatalog" class="calendar-catalog"></div>
+        <section class="surface current-calendar-comparison"><div class="section-title"><span>选中日期的已实现历法</span><small id="calendarCompareMeta">—</small></div><div id="calendarCurrentComparison" class="comparison-list"></div></section>
+      </section>
+
+      <section id="civilization" class="view">
+        <div class="civilization-layout">
+          <section class="surface"><div class="section-title"><span>宗教 / 文明意义层</span><small>宗教并不等于历法；宗教传统调用不同地区的历法规则。</small></div><div id="civilizationObservances" class="observance-list"></div></section>
+          <section class="surface"><div class="section-title"><span>国家 / 地区 Profile</span><small>国家层决定默认历法、纪年和公共日历习惯。</small></div><div id="countryProfilePanel" class="profile-stack"></div></section>
+          <section class="surface"><div class="section-title"><span>历史纪年层</span><small>纪年不等于历法。</small></div><div id="civilizationEra" class="profile-stack"></div></section>
+        </div>
+      </section>
+
+      <section id="interpretation" class="view">
+        <section class="surface interpretation-hero">
+          <div><div class="eyebrow">CIVILIZATIONAL TIME INTERPRETATION</div><h2>时间不仅可以被计量，也可以被文明赋予性质</h2><p>这一层不改变底层日期。它消费天文、历法和地区上下文，输出历注、择日、占日周期、星占与宇宙时序。</p></div>
+          <div class="interpretation-scale"><span>Time</span><b>→</b><span>Meaning</span></div>
+        </section>
+        <div class="interpretation-types" id="interpretationTypes"></div>
+        <section class="surface interpretation-live-panel"><div class="section-title"><span>选中日期的时间文化结果</span><small>已启用插件会在这里给出实际计算/版本化结果。</small></div><div id="interpretationLive" class="interpretation-live"></div></section>
+        <section class="surface plugin-catalog-panel"><div class="section-title"><span>文明时间解释插件</span><small>中国黄历、皇极经世、Panchanga、藏族历算、Pawukon 等都通过同一插件契约接入。</small></div><div id="interpretationPluginCatalog" class="plugin-catalog"></div></section>
+        <section class="surface rule-block"><div class="section-title"><span>三级解释边界</span><small>避免把黄历、择日和个人命理混为一层。</small></div><div class="three-level-grid"><div><b>Level 1 · 日期自身</b><p>TemporalPoint → Almanac：今天具有什么传统属性。</p></div><div><b>Level 2 · 日期 × 活动</b><p>TemporalPoint + Activity → Auspicious Timing：今天适合做什么。</p></div><div><b>Level 3 · 日期 × 活动 × 人</b><p>加入 Person/Birth TemporalPoint → Personal Interpretation。</p></div></div></section>
+      </section>
+
+      <section id="capabilities" class="view professional-page">
+        <div class="calendar-view-switch" role="group" aria-label="Calendar view">
+          <button class="calendar-view-tab" data-target-view="today" type="button" data-i18n="human.today">今天</button>
+          <button class="calendar-view-tab" data-target-view="calendar" type="button" data-i18n="human.monthCalendar">月历</button>
+          <button class="calendar-view-tab active" data-target-view="capabilities" type="button" data-i18n="nav.human.worldCalendars">世界历法</button>
+        </div>
+        <section class="surface capability-hero"><div><div class="eyebrow">WORLD CALENDARS · CAPABILITY MATRIX</div><h2>世界历法 · 能力与数据</h2><p>系统不宣称“世界历法已经收完”。未知体系通过 Representation + Plugin Contract 接入；每个模块独立声明成熟度、依赖、覆盖范围和来源。</p></div><div class="capability-legend" id="capabilityLegend"></div></section>
+        <div id="capabilitySummary" class="capability-summary"></div>
+        <section class="surface capability-table-panel"><div class="section-title"><span>当前模块矩阵</span><small>算法、数据、历史有效期和权威确认分别标记。</small></div><div class="table-wrap"><table class="capability-table"><thead><tr><th>模块</th><th>类别</th><th>状态</th><th>文明/范围</th><th>依赖/说明</th></tr></thead><tbody id="capabilityTableBody"></tbody></table></div></section>
+        <section class="surface mars-prototype"><div class="section-title"><span>Mars Temporal System · 实验验证</span><small>用于证明核心不是写死在地球；并不宣称存在官方火星民用年月历。</small></div><div id="marsPrototype" class="mars-prototype-grid"></div></section>
+        <section class="surface rule-block"><div class="section-title"><span>未来发现一种未知历法时</span><small>核心原则：新增插件，而不是修改 Temporal Core。</small></div><pre class="plugin-contract">PluginManager.register({
+  manifest: { id, type, status, representation, dependsOn, ruleSet, ui },
+  engine: { compute(input, context) },
+  renderer,             // optional: otherwise generic renderer
+  terminology,          // native terms / romanization / translations
+  locales               // plugin-scoped UI explanations
+})</pre></section>
+      </section>
+
+      <section id="explore" class="view">
+        <section class="surface human-hero">
+          <div><div class="eyebrow">EXPLORE TIME</div><h2 data-i18n="human.exploreTitle">从一个问题开始探索时间</h2><p data-i18n="human.exploreSubtitle">不用先理解引擎结构。选择你想知道的问题，再进入相应页面。</p></div>
+        </section>
+        <div class="explore-grid">
+          <button class="explore-card" data-target-view="calendars" type="button"><span class="explore-icon">日</span><b data-i18n="human.exploreCalendars">世界各地今天是什么日期？</b><small data-i18n="human.exploreCalendarsDesc">比较太阳历、太阴历、阴阳合历与特殊周期历。</small></button>
+          <button class="explore-card" data-target-view="civilization" type="button"><span class="explore-icon">文</span><b data-i18n="human.exploreCivilizations">今天在不同文明中意味着什么？</b><small data-i18n="human.exploreCivilizationsDesc">查看宗教节日、国家传统与历史纪年。</small></button>
+          <button class="explore-card" data-target-view="interpretation" type="button"><span class="explore-icon">历</span><b data-i18n="human.exploreTraditions">传统如何解释今天？</b><small data-i18n="human.exploreTraditionsDesc">黄历、Panchanga、Pawukon、皇极经世与三元九运。</small></button>
+          <button class="explore-card" data-target-view="astronomy" type="button"><span class="explore-icon">☉</span><b data-i18n="human.exploreAstronomy">今天的太阳和月亮发生了什么？</b><small data-i18n="human.exploreAstronomyDesc">日出日落、月相、当地太阳时与季节。</small></button>
+        </div>
+      </section>
+
+      <section id="more" class="view">
+        <section class="surface human-hero">
+          <div><div class="eyebrow">MORE</div><h2 data-i18n="human.moreTitle">更多工具与专业信息</h2><p data-i18n="human.moreSubtitle">普通使用不需要理解这些内容；研究、校验和开发时再进入。</p></div>
+        </section>
+        <div class="more-grid">
+          <button class="more-card" data-target-view="capabilities" type="button"><b data-i18n="human.capabilityEntry">能力与数据状态</b><small data-i18n="human.capabilityEntryDesc">查看哪些体系完整、版本化、实验或依赖外部确认。</small></button>
+          <button class="more-card" data-target-view="about" type="button"><b data-i18n="human.architectureEntry">引擎架构</b><small data-i18n="human.architectureEntryDesc">查看五层时间模型、Plugin ABI 与 Provider。</small></button>
+          <button class="more-card" data-target-view="calendar" type="button"><b data-i18n="human.monthEntry">高级月历设置</b><small data-i18n="human.monthEntryDesc">叠加副历、节气、节日与历史纪年。</small></button>
+          <button class="more-card" data-target-view="earth" type="button"><b data-i18n="human.locationEntry">地点与时区</b><small data-i18n="human.locationEntryDesc">搜索地点、地图选点并查看民用时区与太阳时。</small></button>
+        </div>
+      </section>
+
+      <section id="converter" class="view">
+        <div class="converter-layout">
+          <section class="surface convert-input"><div class="section-title"><span>输入日期</span><small>不同历法先归一到 JDN，再展开其它历法。</small></div><label class="control-label">输入历法<select id="sourceCalendar"></select></label><div id="sourceFields" class="source-fields"></div><button id="convertBtn" class="primary wide" type="button">转换为全部历法</button><div id="convertMessage" class="message"></div></section>
+          <section class="surface convert-output"><div class="section-title"><span>同一时间点的不同表达</span><small id="convertResultMeta">—</small></div><div id="convertResults" class="comparison-list"></div></section>
+        </div>
+      </section>
+
+      <section id="site-about" class="view">
+        <section class="surface markdown-page"><div id="aboutMarkdown" class="markdown-content"></div></section>
+      </section>
+
+      <section id="donation" class="view">
+        <section class="surface markdown-page"><div id="donationMarkdown" class="markdown-content"></div></section>
+      </section>
+
+      <section id="about" class="view professional-page">
+        <section class="surface architecture-hero"><div><div class="eyebrow">UNIVERSAL TEMPORAL ENGINE</div><h2>五层时间模型：从物理到文明解释</h2><p>公历、农历、黄历、Panchanga、皇极经世和未来火星时间都不是系统的根；根是“某个天体上的某个地点，在某个绝对时刻”。</p></div><div class="architecture-badge">Earth<br><small>active · Mars experimental</small></div></section>
+        <div id="fiveLayerArchitecture" class="five-layer-architecture"></div>
+        <section class="surface engine-dna"><div class="section-title"><span>最新分层架构</span><small>Calendar Rules 与 Special Plugins 并行；V1.2.0 建立正式 Plugin ABI、Provider、I18n、Terminology 与 Renderer 分层；V1.4.0 补齐全站中英文界面。</small></div><pre>Planetary / Temporal Core + Location Core
+                     ↓
+              Astronomy Engine
+                     ↓
+               Calendar Engine
+          ┌──────────┴──────────┐
+    Calendar Rules        Special Plugins
+          │                      │
+   Regional Variants             │
+          └──────────┬───────────┘
+                     ↓
+            Civilization Context
+       ┌────────┬────┼────┬────────┐
+      Era   Religion Country History Institutional Data
+       └────────┴────┼────┴────────┘
+                     ↓
+       Civilizational Interpretation
+  Almanac · Auspicious · Cycles · Astrology · Cosmology
+                     ↓
+            Civilization Calendar</pre></section>
+        <div class="architecture-grid">
+          <section class="surface architecture-card"><b>CORE</b><h3>Planetary / Temporal</h3><p>Instant、JDN/UTC、Planet、Rotation、Orbit；地球是当前正式实现，火星已用实验太阳时验证扩展接口。</p></section>
+          <section class="surface architecture-card"><b>CORE</b><h3>Location</h3><p>经纬度、海拔、行政时区、地区 Profile。地图选点属于这里，而不是国家层。</p></section>
+          <section class="surface architecture-card"><b>ENGINE</b><h3>Astronomy</h3><p>太阳、月亮、朔望、节气、日出日落；星占或历法可以消费这些结果，但不能反向污染物理层。</p></section>
+          <section class="surface architecture-card"><b>ENGINE</b><h3>Calendar</h3><p>Solar/Lunar/Lunisolar Rules 与非标准 Representation 的 Special Plugins。</p></section>
+          <section class="surface architecture-card"><b>CONTEXT</b><h3>Civilization</h3><p>Era、Religion、Country、History 和权威年度数据是并列语义层。</p></section>
+          <section class="surface architecture-card"><b>INTERPRET</b><h3>Time Interpretation</h3><p>中国黄历、Panchanga、Pawukon、择日、星占、皇极经世/Yuga 等进入统一解释插件层。</p></section>
+          <section class="surface architecture-card"><b>OPTIONAL</b><h3>Personal Context</h3><p>八字、个人占星等需要 Person + Birth TemporalPoint，和日期自身属性严格分离。</p></section>
+          <section class="surface architecture-card"><b>GOVERNANCE</b><h3>Capability Status</h3><p>Core / Full / Versioned / External / Historical / Experimental / Planned，禁止把预留接口写成“已支持”。</p></section>
+        </div>
+        <section class="surface rule-block"><div class="section-title"><span>当前历史纪年</span><small>前841年以后含周王在位纪年；分裂时期可并列。</small></div><div id="ruleEraLookup" class="comparison-list"></div></section>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="calendar-core.js?v=1.4.0"></script>
+  <script src="era-data.js?v=1.4.0"></script>
+  <script src="observance-data.js?v=1.4.0"></script>
+  <script src="temporal-core.js?v=1.4.0"></script>
+  <script src="universal-engine.js?v=1.4.0"></script>
+
+  <!-- V1.4.0 infrastructure: Plugin ABI + full-page i18n + presentation services -->
+  <script src="core/plugin-contract.js?v=1.4.0"></script>
+  <script src="core/plugin-manager.js?v=1.4.0"></script>
+  <script src="presentation/i18n/i18n-core.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/zh-CN.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/en.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/ja.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/ko.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/es.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/fr.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/v133-ui.js?v=1.4.0"></script>
+  <script src="presentation/i18n/locales/v140-ui.js?v=1.4.0"></script>
+  <script src="presentation/i18n/ui-literals.js?v=1.4.0"></script>
+  <script src="presentation/i18n/metadata-en.js?v=1.4.0"></script>
+  <script src="presentation/terminology/terminology-registry.js?v=1.4.0"></script>
+  <script src="presentation/renderers/renderer-registry.js?v=1.4.0"></script>
+  <script src="state/app-state.js?v=1.4.0"></script>
+  <script src="core/reference-time-controller.js?v=1.4.0-time-1"></script>
+  <script src="services/api-client.js?v=1.4.0"></script>
+  <script src="ui/formatters.js?v=1.4.0"></script>
+  <script src="ui/pages/interpretation-page.js?v=1.4.0"></script>
+  <script src="ui/pages/capabilities-page.js?v=1.4.0"></script>
+  <script src="ui/pages/today-human-page.js?v=1.4.0"></script>
+
+  <!-- Legacy registries remain as metadata adapters during migration -->
+  <script src="calendar-registry.js?v=1.4.0"></script>
+  <script src="civilization-registry.js?v=1.4.0"></script>
+  <script src="advanced-systems.js?v=1.4.0"></script>
+
+  <!-- Executable ABI plugins -->
+  <script src="plugins/plugin-bootstrap.js?v=1.4.0"></script>
+  <script src="plugins/calendars/gregorian/plugin.js?v=1.4.0"></script>
+  <script src="plugins/calendars/chinese-modern/plugin.js?v=1.4.0"></script>
+  <script src="plugins/calendars/tibetan/plugin.js?v=1.4.0"></script>
+  <script src="plugins/calendars/si-usts/plugin.js?v=1.4.0"></script>
+  <script src="plugins/calendars/lunar-calendar/plugin.js?v=1.4.0"></script>
+  <script src="plugins/calendars/mars-calendar/plugin.js?v=1.4.0"></script>
+  <script src="plugins/almanacs/chinese-almanac/plugin.js?v=1.4.0"></script>
+  <script src="plugins/almanacs/panchanga/plugin.js?v=1.4.0"></script>
+  <script src="plugins/cosmology/huangji/plugin.js?v=1.4.0"></script>
+  <script src="plugins/cosmology/sanyuan-jiuyun/plugin.js?v=1.4.0"></script>
+  <script src="plugins/cosmology/yuga/plugin.js?v=1.4.0"></script>
+  <script src="plugins/cycles/maya/plugin.js?v=1.4.0"></script>
+  <script src="plugins/cycles/pawukon/plugin.js?v=1.4.0"></script>
+  <script src="plugins/bootstrap.js?v=1.4.0"></script>
+
+  <script src="earth-map.js?v=1.4.0"></script>
+  <script src="ui/human-ui.js?v=1.4.0"></script>
+  <script src="ui/traditional-time.js?v=1.4.0"></script>
+  <script src="ui/civilization-calendar-selector.js?v=1.4.0"></script>
+  <script src="ui/today-layout.js?v=1.4.0"></script>
+  <script src="ui/pages/markdown-page.js?v=1.4.0"></script>
+  <script src="ui/planetary-surface-globe.js?v=1.4.0"></script>
+  <script src="ui/pages/planetary-calendar-pages.js?v=1.4.0-time-1"></script>
+  <script src="astronomy-realtime.js?v=1.4.0"></script>
+  <script src="app.js?v=1.4.0-time-1"></script>
+</body>
+</html>

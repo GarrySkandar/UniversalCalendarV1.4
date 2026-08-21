@@ -1,0 +1,68 @@
+(function(root){
+  'use strict';
+  root.UCCLocaleMetadata={
+    calendar:{
+      gregorian:{civilization:'Western / Global',basis:'Fixed months + solar-year approximation',sync:'4/100/400 leap-year rule',range:'Frontend core −5000…+5000'},
+      julian:{civilization:'Roman / Western',basis:'Fixed months + solar-year approximation',sync:'Leap day every 4 years',range:'Frontend core −5000…+5000'},
+      persian:{civilization:'Iranian / Persian',basis:'Solar year',sync:'2820-year arithmetic cycle',range:'Core calculation; not identical to every official/astronomical implementation'},
+      coptic:{civilization:'Alexandrian / Coptic',basis:'365/366-day solar calendar',sync:'Leap day every four years',range:'Core calculation'},
+      ethiopic:{civilization:'Ethiopia / Eritrea',basis:'365/366-day solar calendar',sync:'Leap day every four years',range:'Core calculation'},
+      indian:{civilization:'Modern India',basis:'Solar calendar',sync:'Coordinated with Gregorian leap years',range:'Core calculation'},
+      islamic:{civilization:'Islamic Civilization',basis:'Arithmetic approximation of 12 lunar months',sync:'No synchronization to solar seasons',range:'Core calculation'},
+      'islamic-observed':{civilization:'Islamic Civilization',basis:'First visible crescent',sync:'No synchronization to solar seasons',range:'Requires location, visibility model, and religious/state confirmation'},
+      chinese:{civilization:'Chinese Civilization',basis:'Astronomical new moon defines months',sync:'Solar longitude / principal terms + leap month',range:'Modern-rule scope via sxtwl. Historical Chinese calendars are handled separately by the History layer.'},
+      korean:{civilization:'East Asian Lunisolar Family',basis:'Astronomical lunar month',sync:'Local timezone / regional rules',range:'Independent regional parameterization planned'},
+      vietnamese:{civilization:'East Asian Lunisolar Family',basis:'Astronomical lunar month',sync:'Regional parameters such as UTC+7',range:'Independent regional parameterization planned'},
+      'japanese-historical':{civilization:'Japan',basis:'Historical lunisolar calendars',sync:'Resolved by historical calendar and validity period',range:'Historical Resolver planned'},
+      hebrew:{civilization:'Jewish Civilization',basis:'Arithmetic lunar-cycle calendar',sync:'19-year leap-month cycle + postponement rules',range:'Core calculation'},
+      thai:{civilization:'Mainland Southeast Asia',basis:'Lunar-phase day counting',sync:'Thai leap-month / leap-day rules',range:'pythaidate provider'},
+      burmese:{civilization:'Mainland Southeast Asia',basis:'Lunar-phase day counting',sync:'Independent Burmese intercalation system',range:'Dedicated engine planned'},
+      srilanka:{civilization:'Sri Lanka',basis:'Lunar phases and full-moon Poya',sync:'South Asian Buddhist tradition',range:'Observance layer partial; complete calendar planned'},
+      tibetan:{civilization:'Tibet / Himalaya',basis:'Lunar days + Kalachakra calendrical tradition',sync:'Independent leap-month, duplicated-day, and skipped-day rules',range:'Optional caltib engines: Phugpa / Tsurphu / Mongol; daily almanac belongs to a separate interpretation plugin'},
+      mayan:{civilization:'Mesoamerica',basis:'Continuous day count',sync:'Composite cycles',range:'Long Count implemented; other cycles are separate plugins'},
+      pawukon:{civilization:'Bali',basis:'210-day concurrent cycles',sync:'Not a conventional year-month-day model',range:'Concurrent-cycle structure implemented; traditional wara names/offsets remain versioned'},
+      bahai:{civilization:'Bahá’í',basis:'19×19 days + intercalary days',sync:'Naw-Rúz related to the vernal equinox',range:'Current observances mainly annual references; complete conversion planned'},
+      'mars-sol':{civilization:'Interplanetary',basis:'Mars mean solar day',sync:'MSD / MST / LMST / Ls',range:'Experimental physical-time layer; not an official Mars civil calendar'}
+    },
+    plugin:{
+      'chinese-almanac':{civilization:'Chinese Civilization',coverage:'lunar-python RuleSet: Ganzhi, Five Elements, Na Yin, Twelve Day Officers, 28 Mansions, spirits, Yi/Ji, Nine Stars, Daoist calendar and related fields',description:'Composite traditional almanac built on the modern Chinese lunisolar calendar and solar terms. Completeness is scoped to a named RuleSet.'},
+      'sanyuan-jiuyun':{name:'Three Cycles and Nine Periods',description:'Versioned Xuan Kong/Feng Shui temporal cycle: three 60-year cycles and nine 20-year periods; shown separately from Shao Yong’s Huangji Jingshi.',coverage:'Common 1864 epoch RuleSet; 180-year cycle, 60 years per cycle, 20 years per period'},
+      'huangji-jingshi':{civilization:'Chinese Civilization',coverage:'Yuan / Hui / Yun / Shi hierarchy and year-within-Shi implemented; hexagram mappings remain separated by source-specific RuleSets',description:'Macro-scale cosmological chronology. The current structural version has an explicit anchor; hexagram derivations must remain source- and version-specific.'},
+      'daoist-time':{civilization:'Chinese Civilization',coverage:'lunar-python Tao RuleSet: Daoist era, festivals, Sanhui, Sanyuan, Eight Seasonal Nodes, Five La, Eight Assemblies, Wu days, Tianshe and related rules',description:'Daoist religious timing overlaps with, but is not identical to, the Chinese traditional almanac.'},
+      'indian-panchanga':{civilization:'Indian Civilization',coverage:'Built-in approximation for Vara / Tithi / Nakshatra / Yoga / Karana; a precise Drik/official RuleSet should replace the provider before Full status',description:'Composite calendar + astronomy + ritual-time interpretation system. Current built-in results are explicitly Experimental.'},
+      'indian-muhurta':{civilization:'Indian Civilization',coverage:'Activity timing varies by school, region, and purpose; interface is reserved without pretending a simplified rule is complete',description:'Date × Activity auspicious-timing layer separated from Panchanga base data.'},
+      'indian-yuga':{civilization:'Indian Civilization',coverage:'Classical four-Yuga / Mahayuga durations and Kali epoch reference implemented; higher levels and epoch details remain text-versioned',description:'Macro-scale cosmological chronology rather than an ordinary civil calendar.'},
+      'tibetan-almanac':{civilization:'Tibet / Himalaya',coverage:'Phugpa / Tsurphu and other traditions have real algorithmic differences; versioned interfaces are reserved without collapsing all Tibetan almanacs into one approximation',description:'Highly composite system combining calendar, astronomy, elements, religion, and auspicious timing.'},
+      'pawukon-cycles':{civilization:'Balinese Civilization',coverage:'210-day concurrent-cycle structure runs; traditional wara names, weights, and offsets remain source-versioned',description:'Concurrent cycles describe which cycles a day occupies rather than forcing a year-month-day representation.'},
+      'maya-ritual':{civilization:'Maya Civilization',coverage:'GMT 584283 RuleSet: Long Count + Tzolkin + Haab + Calendar Round; other correlations can be separate versions',description:'Composite cycle system; Full status is scoped to the declared GMT 584283 correlation.'},
+      'nahua-tonalpohualli':{civilization:'Central Mexican Civilizations',coverage:'260-day ritual-cycle interface reserved; epoch/day-sign mapping version must be confirmed before implementation',description:'Related in structure to Tzolkin but not treated as the same calendar.'},
+      'arabic-electional':{civilization:'Historical Arabic-Persian Cultural Sphere',coverage:'Historical astrology/electional-timing category retained as a plugin interface; specific authors/texts should be implemented as separate RuleSets',description:'Historical electional astrology that consumes planetary positions; not part of the Islamic religious calendar itself.'},
+      'european-almanac':{civilization:'Historical European Civilizations',coverage:'Integrated by region / era / text; centuries of almanac traditions are not collapsed into a fake single algorithm',description:'Historical composite almanacs combining calendar dates, feasts, astronomy/astrology, and daily practice.'},
+      'personal-bazi':{civilization:'Chinese Civilization',coverage:'Explicitly separated from intrinsic almanac properties; this project currently prioritizes public time systems',description:'Person + Birth TemporalPoint + Current TemporalPoint; belongs to the personal interpretation layer.'}
+    },
+    tradition:{
+      chinese:{group:'Chinese Traditions',label:'Chinese Traditional Festivals',short:'Chinese Traditions'},
+      han_buddhist:{group:'Buddhism',label:'Han Chinese Buddhism',short:'Han Buddhism'},
+      taoist:{group:'Daoism',label:'Daoism',short:'Daoism'},
+      thai_buddhist:{group:'Buddhism',label:'Thai Theravada Buddhism',short:'Thai Buddhism'},
+      islamic:{group:'Islam',label:'Islam',short:'Islam'},
+      jewish_israel:{group:'Judaism',label:'Judaism · Israel',short:'Jewish · Israel'},
+      jewish_diaspora:{group:'Judaism',label:'Judaism · Diaspora',short:'Jewish · Diaspora'},
+      christian_western:{group:'Christianity',label:'Western Christianity · Common Use',short:'Western Christian'},
+      catholic:{group:'Christianity',label:'Catholic Liturgical Tradition',short:'Catholic'},
+      protestant:{group:'Christianity',label:'Major Protestant Traditions',short:'Protestant'},
+      lds:{group:'Christianity',label:'Latter-day Saint Tradition',short:'Latter-day Saint'},
+      orthodox_new:{group:'Christianity',label:'Orthodox · New Calendar',short:'Orthodox New'},
+      orthodox_old:{group:'Christianity',label:'Orthodox · Old Calendar',short:'Orthodox Old'},
+      armenian:{group:'Christianity',label:'Armenian Apostolic Church',short:'Armenian Church'},
+      coptic:{group:'Christianity',label:'Coptic Orthodox',short:'Coptic Orthodox'},
+      ethiopian:{group:'Christianity',label:'Ethiopian Orthodox',short:'Ethiopian Orthodox'},
+      hindu:{group:'Indian Religions',label:'Hinduism (2026 reference)',short:'Hindu'},
+      sikh:{group:'Indian Religions',label:'Sikhism (2026 reference)',short:'Sikh'},
+      jain:{group:'Indian Religions',label:'Jainism (2026 reference)',short:'Jain'},
+      zoroastrian:{group:'Iranian Religions',label:'Zoroastrianism (partial 2026 reference)',short:'Zoroastrian'},
+      bahai:{group:'Bahá’í',label:'Bahá’í (2026 official table)',short:'Bahá’í'},
+      silicon:{group:'Modern Eras',label:'Silicon Civilization Observances',short:'Silicon'}
+    }
+  };
+})(window);

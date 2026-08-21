@@ -1,0 +1,5 @@
+# Optional/recommended extensions. Core startup does not fail if these cannot be installed.
+timezonefinder>=6.5,<9
+lunar_python>=1.4.8,<2
+caltib==0.3.2
+pyerfa>=2.0

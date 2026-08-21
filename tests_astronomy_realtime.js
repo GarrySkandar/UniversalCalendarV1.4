@@ -1,0 +1,22 @@
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const root=__dirname,html=fs.readFileSync(path.join(root,'index.html'),'utf8'),js=fs.readFileSync(path.join(root,'astronomy-realtime.js'),'utf8'),css=fs.readFileSync(path.join(root,'astronomy-realtime.css'),'utf8');
+function ok(c,m){if(!c){console.error('FAIL:',m);process.exit(1)}console.log('OK:',m)}
+ok(html.includes('id="realtimeSundial"')&&html.includes('id="realtimeOrbits"'),'astronomy page includes both realtime modules');
+ok(html.includes('astronomy-realtime.css?v=1.4.0')&&html.includes('astronomy-realtime.js?v=1.4.0'),'v1.4.0 realtime assets are loaded');
+ok(js.includes("S?.subscribe?.('location'")&&js.includes("visibilitychange")&&js.includes('1000-(Date.now()%1000)'), 'updates follow location, visibility, and one-second boundaries');
+ok(js.includes("loc.lat>=0?'北半球':'南半球'")&&js.includes('90-Math.abs(loc.lat)'), 'sundial distinguishes hemispheres and latitude tilt');
+ok(js.includes('pos.altitude>0')&&js.includes('太阳位于地平线下'),'sundial has a night state');
+ok(js.includes('sdLightCone')&&js.includes('sdObjectShadow')&&js.includes('sdRim'),'sundial renders a 3D plate, explicit sunlight, and object depth');
+ok(js.includes('sdGnomonBody')&&js.includes('sdGnomonTip')&&js.includes('sdGnomonCollar'),'sundial uses a dimensional bronze gnomon instead of a stroked pole');
+ok(js.includes('sdPedestal')&&js.includes('sdStone'),'sundial renders an integrated pedestal and thick stone dial body');
+ok(js.includes("axisSign=loc.lat>=0?1:-1")&&js.includes("face=pos.declination>=0?'北晷面':'南晷面'"),'3D polar axis mirrors by hemisphere and illuminated face follows solar declination');
+ok(js.includes('7.653/24')&&js.includes('30.298/24')&&js.includes('火卫一')&&js.includes('火卫二'),'Mars moons use distinct realtime orbital periods');
+ok(html.includes('data-orbit-action="in"')&&html.includes('data-orbit-action="out"')&&html.includes('data-orbit-action="reset"'),'orbit view exposes zoom and reset controls');
+ok(js.includes("addEventListener('wheel'")&&js.includes("addEventListener('pointermove'")&&js.includes("addEventListener('dblclick'"),'orbit view supports wheel zoom, drag pan, and double-click reset');
+ok(js.includes('orbitView={scale:1,x:0,y:0}')&&js.includes('applyOrbitTransform();'),'orbit camera state persists across one-second rerenders');
+ok(js.includes('clamp(nextScale,.65,8)')&&js.includes('anchorX-(anchorX-orbitView.x)*ratio'),'orbit zoom is bounded and anchored at the pointer');
+ok(css.includes('@media(max-width:1180px)')&&css.includes('@media(max-width:650px)')&&css.includes('@media(max-width:380px)'),'new modules include desktop, tablet, and narrow-mobile layouts');
+ok(css.includes('.realtime-astronomy-grid{display:grid;grid-template-columns:1fr')&&css.includes('.sundial-stage{aspect-ratio:2/1'),'sundial is presented as a full-width hero instead of a compressed half-width card');
+ok(css.includes('max-width:100vw')&&css.includes('.workspace>*{max-width:100%;min-width:0}'),'narrow layouts constrain legacy workspace content to the viewport');
+const sandbox={window:{TemporalCore:{zoneParts:()=>({year:2026,month:3,day:20,hour:12,minute:0,second:0}),zoneOffsetMinutes:()=>0,approxOffsetMinutes:()=>0,loadLocation:()=>({lat:0,lon:0})},AppState:{get:()=>null,subscribe:()=>{}}},document:{readyState:'loading',addEventListener:()=>{},querySelector:()=>null},setTimeout:()=>0,clearTimeout:()=>{}};vm.createContext(sandbox);vm.runInContext(js,sandbox);ok(true,'realtime module parses in an isolated browser-like context');
+console.log('Realtime astronomy tests passed.');

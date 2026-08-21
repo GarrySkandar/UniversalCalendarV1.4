@@ -1,0 +1,4 @@
+window.PluginBootstrap.define({
+  manifest:{id:'maya-ritual',type:'cycle',name:'玛雅仪式周期',en:'Maya Ritual Cycles',civilization:'玛雅文明',status:'full',version:'1.2.0',representation:'composite-cycles',dependsOn:['temporal-core'],coverage:'GMT 584283：Long Count + Tzolkin + Haab + Calendar Round',ruleSet:{id:'gmt-584283',name:'GMT correlation 584283'},ui:{selectable:true,group:'interpretation',renderer:'cycle-grid'}},
+  engine:{compute(input,ctx){const jdn=input.jdn??input.selectedJdn;if(jdn==null)throw new Error('Maya plugin requires jdn');const C=ctx.core.calendar,x=window.AdvancedTimeSystems.mayaRitual(jdn),lc=C.mayanFromJdn?C.mayanFromJdn(jdn):null;return {type:'composite-cycles',correlation:x.correlation,cycles:{longCount:lc?`${lc.baktun}.${lc.katun}.${lc.tun}.${lc.uinal}.${lc.kin}`:C.allFromJdn(jdn).labels.mayan,tzolkin:x.tzolkin.text,haab:x.haab.text,calendarRound:x.calendarRound}};}}
+});

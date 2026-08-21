@@ -1,0 +1,21 @@
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const root=__dirname;
+function ok(c,m){if(!c){console.error('FAIL:',m);process.exit(1)}console.log('OK:',m)}
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
+const selector=fs.readFileSync(path.join(root,'ui/civilization-calendar-selector.js'),'utf8');
+const today=fs.readFileSync(path.join(root,'ui/pages/today-human-page.js'),'utf8');
+const nav=[...html.matchAll(/class="nav-item[^\"]*" data-view="([^"]+)"/g)].map(x=>x[1]);
+ok(JSON.stringify(nav)===JSON.stringify(['today','astronomy','lunar-calendar','mars-calendar','earth','converter','about','site-about','donation']),'v1.4.0 primary navigation exposes calendar and planetary pages');
+ok(html.includes('class="calendar-view-tab active" data-target-view="today"')&&html.includes('data-target-view="calendar"')&&html.includes('data-target-view="capabilities"'),'Calendar contains Today, Month, and World Calendars tabs');
+ok(!html.includes('id="displayMode"'),'superseded progressive display mode selector remains removed');
+ok(html.includes('id="traditionPanel"')&&html.includes('id="civilizationCalendarFilters"'),'civilization calendar selector remains available on calendar pages');
+ok(selector.includes('root.CivilizationCalendarSelector')&&selector.includes('selectableDescendants'),'civilization calendar hierarchy is delegated to its selector module');
+ok(today.includes('renderCivilizations')&&today.includes('renderDateModules'),'Today keeps civilization and traditional-time summaries');
+ok(!app.includes("mode==='simple'?1:2")&&!app.includes("mode==='professional'"),'application no longer branches on superseded display modes');
+ok(css.includes('.calendar-view-switch')&&css.includes('.human-card-grid'),'CSS includes current calendar tabs and human-facing cards');
+const hui=fs.readFileSync(path.join(root,'ui/human-ui.js'),'utf8');
+ok(hui.includes("['today','calendar','capabilities']")&&hui.includes("view==='lunar-calendar'")&&hui.includes("view==='mars-calendar'"),'navigation groups preserve Calendar, Moon, and Mars pages');
+ok(html.includes('v1.4.0'),'v1.4.0 assets are loaded');
+console.log('V1.4.0 human-oriented UI compatibility tests passed.');

@@ -1,0 +1,44 @@
+# Python environments and caches
+.venv/
+.venv*/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyd
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Runtime and installer output
+*.log
+*.pid
+coverage/
+.coverage
+htmlcov/
+
+# JavaScript dependencies and build output
+node_modules/
+dist/
+build/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*~
